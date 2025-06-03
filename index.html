@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Habitica Gear Sets</title>
+    <meta name="description" content="View and manage your Habitica gear sets">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            height: 100vh;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #gearSection {
+            display: none;
+            height: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .fixed-section {
+            background: white;
+            z-index: 10;
+            padding-bottom: 15px;
+        }
+
+        #setsContainer {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .set-container {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: white;
+        }
+
+        .search-container {
+            margin-bottom: 15px;
+            padding: 0;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #4f2a93;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .set-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .set-title {
+            margin: 0;
+            color: #4f2a93;
+            font-size: 1.5em;
+        }
+
+        .button-container {
+            margin-left: 15px;
+        }
+
+        .dress-button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .dress-button:hover {
+            background-color: #45a049;
+        }
+
+        .gear-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .gear-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background-color: white;
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .gear-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .gear-item img {
+            width: 60px;
+            height: 60px;
+            margin-right: 15px;
+            object-fit: contain;
+        }
+
+        .gear-item img.lazy {
+            background: #f0f0f0 url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBzdHJva2U9IiNjY2MiPjxnIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMSAxKSIgc3Ryb2tlLXdpZHRoPSIyIj48Y2lyY2xlIHN0cm9rZS1vcGFjaXR5PSIuNSIgY3g9IjE4IiBjeT0iMTgiIHI9IjE4Ii8+PHBhdGggZD0ibTM5IDE5YzAgOS45LTggMTgtMTggMTgiPjxhbmltYXRlVHJhbnNmb3JtIGF0dHJpYnV0ZU5hbWU9InRyYW5zZm9ybSIgdHlwZT0icm90YXRlIiBkdXI9IjFzIiB2YWx1ZXM9IjAgMTggMTg7MzYwIDE4IDE4IiByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIvPjwvcGF0aD48L2c+PC9nPjwvc3ZnPg==') no-repeat center;
+            background-size: 20px 20px;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+
+        .gear-item img.lazy.loaded {
+            opacity: 1;
+        }
+
+        .gear-info {
+            flex-grow: 1;
+        }
+
+        .gear-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #4f2a93;
+        }
+
+        #loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 8px;
+            z-index: 1000;
+        }
+
+        .login-container {
+            max-width: 400px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4f2bc7;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #5c48a3;
+        }
+
+        #currentCostume {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .costume {
+            position: absolute;
+            left: 25px;
+            top: 25px;
+        }
+
+        .background-costume {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 140px;
+            height: 147px;
+        }
+
+        .current-costume-section {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin: 0;
+            margin-bottom: 15px;
+        }
+
+        .unified-costume-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            min-height: 147px;
+        }
+
+        .costume-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        #unifiedCostumeAvatar {
+            position: relative;
+            width: 140px;
+            height: 147px;
+            flex-shrink: 0;
+        }
+
+        .costume {
+            position: absolute;
+            left: 25px;
+            top: 25px;
+        }
+
+        .background-costume {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 140px;
+            height: 147px;
+        }
+
+        .undress-btn {
+            background: #7159c1;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .undress-btn:hover {
+            background: #5c48a3;
+        }
+
+        .random-preview-btn {
+            background: #ff6b35;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .random-preview-btn:hover {
+            background: #e55a2b;
+        }
+
+        .dress-random-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .dress-random-btn:hover {
+            background: #218838;
+        }
+
+
+        .item-toggle {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 22px;
+            height: 22px;
+            border: none;
+            border-radius: 50%;
+            padding: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 12px;
+            transition: background-color 0.2s;
+            z-index: 1;
+        }
+
+        .item-toggle.dressed {
+            background-color: #f44336;
+        }
+
+        .item-toggle:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="loginSection" class="login-container">
+            <h2>Habitica Gear Sets</h2>
+            <p style="margin-bottom: 20px; text-align: center;">
+                <a href="https://github.com/michel-gatti/habitica_sets" target="_blank" style="color: #4f2bc7; text-decoration: none;">
+                    <i class="fa fa-github"></i> View on GitHub
+                </a>
+            </p>
+            <form id="userApiDetailsForm">
+                <div class="form-group">
+                    <label for="userId">User ID:</label>
+                    <input type="text" id="userId" required>
+                </div>
+                <div class="form-group">
+                    <label for="apiToken">API Token:</label>
+                    <input type="text" id="apiToken" required>
+                </div>
+                <button type="submit">Load Gear</button>
+            </form>
+        </div>
+
+        <div id="gearSection" style="display: none;">
+            <div class="fixed-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h1>Your Habitica Gear Sets</h1>
+                    <button id="logoutButton" class="logout-btn">Logout</button>
+                </div>
+                <div class="search-container">
+                    <input type="text" class="search-box" id="searchBox" placeholder="Search for sets or items...">
+                </div>
+                <div class="current-costume-section">
+                    <div class="unified-costume-container">
+                        <div id="unifiedCostumeAvatar"></div>
+                        <div class="costume-buttons">
+                            <button id="randomPreviewButton" class="random-preview-btn">Random Preview</button>
+                            <button id="undressButton" class="undress-btn">Undress</button>
+                            <button id="dressRandomButton" class="dress-random-btn" style="display: none;">Dress</button>
+                            <button id="cancelPreviewButton" class="undress-btn" style="display: none;">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="setsContainer"></div>
+        </div>
+    </div>
+
+    <div id="loading">Loading...</div>
+
+    <script>
+        let userID = '';
+        let apiToken = '';
+        let content = {};
+        let user = {};
+        let emptyCostume = {
+            'head': '',
+            'armor': '',
+            'weapon': '',
+            'shield': '',
+            'back': '',
+            'body': '',
+            'eyewear': '',
+            'headAccessory': '',
+            'preferences': {
+                'hair': {
+                    'color': '',
+                    'base': 0,
+                    'bangs': 0,
+                    'beard': 0,
+                    'mustache': 0,
+                    'flower': 0
+                },
+                'skin': '',
+                'shirt': '',
+                'chair': '',
+                'size': '',
+                'background': ''
+            }
+        };
+
+        let currentRandomSelection = null;
+
+        // Lazy loading functionality
+        let imageObserver;
+
+        function initLazyLoading() {
+            if ('IntersectionObserver' in window) {
+                imageObserver = new IntersectionObserver(function(entries, observer) {
+                    entries.forEach(function(entry) {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            img.src = img.dataset.src;
+                            img.classList.remove('lazy');
+                            img.classList.add('loaded');
+                            observer.unobserve(img);
+                        }
+                    });
+                });
+            } else {
+                // Fallback for browsers without IntersectionObserver
+                const lazyImages = document.querySelectorAll('img.lazy');
+                lazyImages.forEach(function(img) {
+                    img.src = img.dataset.src;
+                    img.classList.remove('lazy');
+                    img.classList.add('loaded');
+                });
+            }
+        }
+
+        function getRandomItemFromCategory(items, category) {
+            const categoryItems = items.filter(item => content.gear.flat[item.key].type === category);
+            if (categoryItems.length === 0) return null;
+            return categoryItems[Math.floor(Math.random() * categoryItems.length)];
+        }
+
+        function generateRandomSelection(setItems) {
+            const categories = ['head', 'armor', 'weapon', 'shield', 'body'];
+            const randomSelection = {};
+            const selectedItems = [];
+
+            categories.forEach(category => {
+                const randomItem = getRandomItemFromCategory(setItems, category);
+                if (randomItem) {
+                    randomSelection[category] = randomItem.key;
+                    selectedItems.push(randomItem);
+                }
+            });
+
+            return {
+                costume: randomSelection,
+                items: selectedItems
+            };
+        }
+
+        function generateSetPreview(setItems) {
+            // For set previews, include ALL item types including accessories
+            const categories = ['head', 'armor', 'weapon', 'shield', 'back', 'body', 'eyewear', 'headAccessory'];
+            const previewSelection = {};
+            const selectedItems = [];
+
+            categories.forEach(category => {
+                const randomItem = getRandomItemFromCategory(setItems, category);
+                if (randomItem) {
+                    previewSelection[category] = randomItem.key;
+                    selectedItems.push(randomItem);
+                }
+            });
+
+            return {
+                costume: previewSelection,
+                items: selectedItems
+            };
+        }
+
+        function showRandomPreview(setItems) {
+            currentRandomSelection = generateRandomSelection(setItems);
+            displayPreview();
+        }
+
+        function showSetPreview(setItems) {
+            currentRandomSelection = generateSetPreview(setItems);
+            displayPreview();
+        }
+
+        function displayPreview() {
+            // Create preview costume with current user preferences
+            const previewCostume = {
+                // Start with empty values for all gear slots
+                head: '',
+                armor: '',
+                weapon: '',
+                shield: '',
+                back: '',
+                body: '',
+                eyewear: '',
+                headAccessory: '',
+                // Override with random selections
+                ...currentRandomSelection.costume,
+                preferences: {
+                    hair: {
+                        color: user.preferences.hair.color,
+                        base: user.preferences.hair.base,
+                        bangs: user.preferences.hair.bangs,
+                        beard: user.preferences.hair.beard,
+                        mustache: user.preferences.hair.mustache,
+                        flower: user.preferences.hair.flower
+                    },
+                    skin: user.preferences.skin,
+                    shirt: user.preferences.shirt,
+                    chair: user.preferences.chair,
+                    size: user.preferences.size,
+                    background: user.preferences.background
+                }
+            };
+
+            // Switch to preview mode
+            $('#undressButton').hide();
+            $('#dressRandomButton').show();
+            $('#cancelPreviewButton').show();
+
+            // Render the avatar preview in unified container
+            $('#unifiedCostumeAvatar').html(costumeAvatar(previewCostume));
+            
+            // Update toggle buttons to show which items are in preview
+            updateToggleButtonsForPreview();
+        }
+
+        function exitPreviewMode() {
+            // Switch back to current costume mode
+            $('#undressButton').show();
+            $('#dressRandomButton').hide();
+            $('#cancelPreviewButton').hide();
+
+            // Show current costume again
+            updateCurrentCostume();
+            currentRandomSelection = null;
+            
+            // Reset all toggle buttons to plus
+            $('.item-toggle').each(function() {
+                $(this)
+                    .html('<i class="fa fa-plus"></i>')
+                    .removeClass('dressed');
+            });
+        }
+
+        function addItemToPreview(itemKey, itemData) {
+            // Initialize preview mode if not already active
+            if (!currentRandomSelection) {
+                currentRandomSelection = {
+                    costume: {},
+                    items: []
+                };
+                // Switch to preview mode UI
+                $('#undressButton').hide();
+                $('#dressRandomButton').show();
+                $('#cancelPreviewButton').show();
+            }
+
+            // Remove any existing item of the same type
+            const itemType = itemData.type;
+            currentRandomSelection.items = currentRandomSelection.items.filter(item =>
+                content.gear.flat[item.key].type !== itemType
+            );
+
+            // Add new item
+            currentRandomSelection.costume[itemType] = itemKey;
+            currentRandomSelection.items.push({
+                key: itemKey,
+                ...itemData
+            });
+
+            // Update preview display and toggle buttons
+            updatePreviewDisplay();
+            updateToggleButtonsForPreview();
+        }
+
+        function removeItemFromPreview(itemKey, itemData) {
+            if (!currentRandomSelection) return;
+
+            const itemType = itemData.type;
+            
+            // Remove item from costume and items array
+            delete currentRandomSelection.costume[itemType];
+            currentRandomSelection.items = currentRandomSelection.items.filter(item => 
+                item.key !== itemKey
+            );
+
+            // If no items left, exit preview mode
+            if (currentRandomSelection.items.length === 0) {
+                exitPreviewMode();
+                return;
+            }
+
+            // Update preview display and toggle buttons
+            updatePreviewDisplay();
+            updateToggleButtonsForPreview();
+        }
+
+        function isItemInPreview(itemKey) {
+            return currentRandomSelection && 
+                   currentRandomSelection.items.some(item => item.key === itemKey);
+        }
+
+        function updateToggleButtonsForPreview() {
+            $('.item-toggle').each(function() {
+                const $button = $(this);
+                const $item = $button.closest('.gear-item');
+                const itemKey = $item.data('item-key');
+                const isInPreview = isItemInPreview(itemKey);
+                
+                $button
+                    .html(isInPreview ? '<i class="fa fa-minus"></i>' : '<i class="fa fa-plus"></i>')
+                    .toggleClass('dressed', isInPreview);
+            });
+        }
+
+        function updatePreviewDisplay() {
+            if (!currentRandomSelection) return;
+
+            // Create preview costume
+            const previewCostume = {
+                head: '',
+                armor: '',
+                weapon: '',
+                shield: '',
+                back: '',
+                body: '',
+                eyewear: '',
+                headAccessory: '',
+                ...currentRandomSelection.costume,
+                preferences: {
+                    hair: {
+                        color: user.preferences.hair.color,
+                        base: user.preferences.hair.base,
+                        bangs: user.preferences.hair.bangs,
+                        beard: user.preferences.hair.beard,
+                        mustache: user.preferences.hair.mustache,
+                        flower: user.preferences.hair.flower
+                    },
+                    skin: user.preferences.skin,
+                    shirt: user.preferences.shirt,
+                    chair: user.preferences.chair,
+                    size: user.preferences.size,
+                    background: user.preferences.background
+                }
+            };
+
+            // Update avatar
+            $('#unifiedCostumeAvatar').html(costumeAvatar(previewCostume));
+        }
+
+        async function dressRandomSelection() {
+            if (!currentRandomSelection) {
+                alert('No random selection available. Please generate a random preview first.');
+                return;
+            }
+
+            $('#loading').show();
+            try {
+                // First undress current costume
+                await undressCostume();
+
+                // Then dress the random selection
+                for (const [category, itemKey] of Object.entries(currentRandomSelection.costume)) {
+                    if (itemKey && !itemKey.includes('_base_0')) {
+                        try {
+                            await doAjax(`https://habitica.com/api/v3/user/equip/costume/${itemKey}`, 'POST');
+                        } catch (error) {
+                            console.error('Error equipping random item:', error);
+                            throw error;
+                        }
+                    }
+                }
+
+                // Update user data
+                const result = await doAjax('https://habitica.com/api/v3/user', 'GET');
+                if (result && result.data) {
+                    user = result.data;
+                    updateCurrentCostume();
+                    updateToggleButtons();
+                }
+
+                // Exit preview mode
+                exitPreviewMode();
+
+            } catch (error) {
+                console.error('Error dressing random selection:', error);
+                alert('Error dressing random selection: ' + error);
+            } finally {
+                $('#loading').hide();
+            }
+        }
+
+        // Storage function with cookie fallback
+        function storeData(key, value) {
+            var lsSupport = false;
+            // Check for native support
+            lsSupport = (function() {
+                try {
+                    localStorage.setItem("Test", "Test");
+                    localStorage.removeItem("Test");
+                    return true;
+                } catch (exception) {
+                    return false;
+                }
+            }());
+
+            // If value is detected, set new or modify store
+            if (typeof value !== "undefined" && value !== null) {
+                if (lsSupport) {
+                    localStorage.setItem(key, value);
+                } else { // Use Cookie
+                    createCookie(key, value, 30);
+                }
+            }
+            // No value supplied, return value
+            if (typeof value === "undefined") {
+                if (lsSupport) { // Native support
+                    return localStorage.getItem(key);
+                } else { // Use cookie
+                    return readCookie(key);
+                }
+            }
+            // Null specified, remove store
+            if (value === null) {
+                if (lsSupport) { // Native support
+                    localStorage.removeItem(key);
+                } else { // Use cookie
+                    createCookie(key, '', -1);
+                }
+            }
+
+            function createCookie(key, value, exp) {
+                var date = new Date();
+                date.setTime(date.getTime() + (exp * 24 * 60 * 60 * 1000));
+                var expires = "; expires=" + date.toGMTString();
+                document.cookie = key + "=" + value + expires + "; path=/";
+            }
+
+            function readCookie(key) {
+                var nameEQ = key + "=";
+                var ca = document.cookie.split(';');
+                for (var i = 0, max = ca.length; i < max; i++) {
+                    var c = ca[i];
+                    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+                }
+                return null;
+            }
+        }
+
+        // Load stored credentials on page load
+        $(document).ready(function() {
+            const storedUserId = storeData('habitica_user_id');
+            const storedApiToken = storeData('habitica_api_token');
+
+            if (storedUserId && storedApiToken) {
+                userID = storedUserId;
+                apiToken = storedApiToken;
+                $('#userId').val(storedUserId);
+                $('#apiToken').val(storedApiToken);
+                fetchData();
+            }
+        });
+
+        $('#userApiDetailsForm').submit(function(event) {
+            event.preventDefault();
+            userID = $('#userId').val();
+            apiToken = $('#apiToken').val();
+
+            // Store credentials
+            storeData('habitica_user_id', userID);
+            storeData('habitica_api_token', apiToken);
+
+            fetchData();
+        });
+
+        async function fetchData() {
+            // Hide login form and show loading
+            $('#userApiDetailsForm').hide();
+            $('#loading').show();
+
+            try {
+                const userResult = await doAjax('https://habitica.com/api/v3/user', 'GET');
+                const contentResult = await doAjax('https://habitica.com/api/v3/content', 'GET');
+
+                user = userResult.data;
+                content = contentResult.data;
+
+                initLazyLoading();
+                processGearSets();
+                updateCurrentCostume();
+                $('#loginSection').hide();
+                $('#gearSection').show();
+            } catch (error) {
+                alert('Error fetching data: ' + error);
+                // Show login form again if there's an error
+                $('#userApiDetailsForm').show();
+            } finally {
+                $('#loading').hide();
+            }
+        }
+
+        async function doAjax(url, method) {
+            try {
+                const result = await $.ajax({
+                    url: url,
+                    type: method,
+                    dataType: 'json',
+                    cache: false,
+                    beforeSend: function(xhr) {
+                        xhr.setRequestHeader('x-api-user', userID);
+                        xhr.setRequestHeader('x-api-key', apiToken);
+                        xhr.setRequestHeader('x-client', 'habitica-sets-web-app');
+                    }
+                });
+                return result;  // Return the full result, not just result.data
+            } catch (error) {
+                throw error.responseText || 'Network error';
+            }
+        }
+
+        function findCommonWords(items) {
+            // Get all item texts
+            const texts = items.map(item => item.text.split(' '));
+            // Find common words that appear in all items
+            const commonWords = texts[0].filter(word =>
+                texts.every(itemWords =>
+                    itemWords.includes(word)
+                )
+            );
+            return commonWords;
+        }
+
+        function toTitleCase(str) {
+            // First split by capital letters and remove 'Set' from the end if present
+            str = str.replace(/Set$/, '');
+            // Split by capital letters and join with spaces
+            str = str.replace(/([A-Z])/g, ' $1').trim();
+            // Capitalize first letter of each word
+            str = str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+            // Remove season + year pattern from the beginning (e.g., Fall2023, Spring2017)
+            str = str.replace(/^(Spring|Summer|Fall|Winter)\d{4}/, '').trim();
+            return str + ' Set';
+        }
+
+        function processGearSets() {
+            const gearSets = {};
+            const ownedGear = user.items.gear.owned;
+
+            // Process each piece of gear
+            Object.keys(content.gear.flat).forEach(gearKey => {
+                const gear = content.gear.flat[gearKey];
+                if (ownedGear[gearKey] && gear.set) {
+                    if (!gearSets[gear.set]) {
+                        gearSets[gear.set] = [];
+                    }
+                    gearSets[gear.set].push({
+                        key: gearKey,
+                        ...gear
+                    });
+                }
+            });
+
+            // Store gearSets in a global variable for search functionality
+            window.gearSets = gearSets;
+
+            displayGearSets(gearSets);
+        }
+
+        function updateToggleButtons() {
+            // Update all toggle buttons based on current costume state
+            $('.item-toggle').each(function() {
+                const $button = $(this);
+                const $item = $button.closest('.gear-item');
+                const itemKey = $item.data('item-key');
+                const itemType = content.gear.flat[itemKey].type;
+                const isDressed = user.items.gear.costume[itemType] === itemKey;
+
+                $button
+                    .html(isDressed ? '<i class="fa fa-minus"></i>' : '<i class="fa fa-plus"></i>')
+                    .toggleClass('dressed', isDressed);
+            });
+        }
+
+        function displayGearSets(gearSets) {
+            // Display the sets
+            const container = $('#setsContainer');
+            container.empty();
+            // Sort sets alphabetically but move single-item sets to the end
+            const multiItemSets = Object.keys(gearSets).filter(set => gearSets[set].length > 1).sort();
+            const singleItemSets = Object.keys(gearSets).filter(set => gearSets[set].length === 1).sort();
+            const sortedSets = [...multiItemSets, ...singleItemSets];
+
+            sortedSets.forEach(setName => {
+                const setContainer = $('<div>').addClass('set-container');
+
+                // Create header with set name and dress button
+                const setHeader = $('<div>').addClass('set-header');
+
+                // Get the first gear item in the set and extract the set name from notes
+                const firstItem = gearSets[setName][0];
+                let setDisplayName = setName; // fallback to the raw set name
+
+                if (setName.startsWith('mystery')) {
+                    // For mystery sets, find common words in item names
+                    const commonWords = findCommonWords(gearSets[setName]);
+                    if (commonWords.length > 0) {
+                        // Join the common words and add 'Set'
+                        setDisplayName = commonWords.join(' ') + ' Set';
+                    } else {
+                        // Fallback to regular title case if no common words found
+                        setDisplayName = toTitleCase(setName);
+                    }
+                } else if (firstItem.notes) {
+                    // Try to extract set name from notes using regex
+                    const setMatch = firstItem.notes.match(/Enchanted Armoire: (.*?) \(Item \d+ of \d+\)/);
+                    if (setMatch) {
+                        setDisplayName = setMatch[1];
+                    } else {
+                        // If no match in notes, convert the raw set name to title case
+                        setDisplayName = toTitleCase(setName);
+                    }
+                } else {
+                    // If no notes, convert the raw set name to title case
+                    setDisplayName = toTitleCase(setName);
+                }
+
+                const setTitle = $('<h3>').addClass('set-title').text(setDisplayName);
+                setHeader.append(setTitle);
+
+                // Add dress button and random preview button
+                const buttonContainer = $('<div>').addClass('button-container');
+                const dressButton = $('<button>')
+                    .addClass('dress-button')
+                    .text('Dress')
+                    .click(() => dressSet(gearSets[setName].map(gear => gear.key)));
+
+                const randomPreviewSetButton = $('<button>')
+                    .addClass('random-preview-btn')
+                    .text('Preview')
+                    .css('margin-left', '10px')
+                    .click(() => showSetPreview(gearSets[setName]));
+
+                buttonContainer.append(dressButton, randomPreviewSetButton);
+                setHeader.append(buttonContainer);
+
+                setContainer.append(setHeader);
+
+                const gearGrid = $('<div>').addClass('gear-grid');
+
+                gearSets[setName].forEach(gear => {
+                    const gearItem = $('<div>').addClass('gear-item');
+                    // Store the item key as data attribute for easy access
+                    gearItem.data('item-key', gear.key);
+                    const imageKey = gear.key.startsWith('armor_') ? `broad_${gear.key}` : gear.key;
+                    const gearImage = $('<img>')
+                        .addClass('lazy')
+                        .attr('data-src', `https://s3.amazonaws.com/habitica-assets/mobileApp/images/${imageKey}.png`)
+                        .attr('alt', gear.text);
+                    const gearInfo = $('<div>').addClass('gear-info');
+                    const gearName = $('<div>').addClass('gear-name').text(gear.text);
+
+                    // Add toggle button
+                    const toggleButton = $('<button>')
+                        .addClass('item-toggle')
+                        .html('<i class="fa fa-plus"></i>')
+                        .click((e) => {
+                            e.stopPropagation();
+                            // Toggle item in preview
+                            if (isItemInPreview(gear.key)) {
+                                removeItemFromPreview(gear.key, gear);
+                            } else {
+                                addItemToPreview(gear.key, gear);
+                            }
+                        });
+
+                    // Initial state is plus (will be updated by preview functions if needed)
+
+                    gearInfo.append(gearName);
+                    gearItem.append(toggleButton, gearImage, gearInfo);
+                    gearGrid.append(gearItem);
+                });
+
+                setContainer.append(gearGrid);
+                container.append(setContainer);
+            });
+
+            // Initialize lazy loading for newly added images
+            if (imageObserver) {
+                $('.gear-item img.lazy').each(function() {
+                    imageObserver.observe(this);
+                });
+            }
+        }
+
+        function getItemDisplayName(itemKey) {
+            return content.gear.flat[itemKey]?.text || itemKey;
+        }
+
+        function costumeAvatar(costume) {
+            let avatarCostume = '<div style="position: relative; height: 147px; width: 140px;">';
+
+            if (costume.preferences.background) {
+                avatarCostume += `<img src="https://s3.amazonaws.com/habitica-assets/mobileApp/images/background_${costume.preferences.background}.png" class="background-costume">`;
+            }
+            if (costume.preferences.chair && costume.preferences.chair !== 'none') {
+                avatarCostume += `<img src="https://s3.amazonaws.com/habitica-assets/mobileApp/images/chair_${costume.preferences.chair}.png" class="costume">`;
+            }
+            if (costume.back && !costume.back.includes('base_0')) {
+                avatarCostume += `<img src="https://s3.amazonaws.com/habitica-assets/mobileApp/images/${costume.back}.png" class="costume">`;
+            }
+            if (costume.preferences.shirt) {
+                avatarCostume += `<img src="https://s3.amazonaws.com/habitica-assets/mobileApp/images/${costume.preferences.size}_shirt_${costume.preferences.shirt}.png" class="costume">`;
+            }
+            if (costume.preferences.skin) {
+                avatarCostume += `<img src="https://s3.amazonaws.com/habitica-assets/mobileApp/images/skin_${costume.preferences.skin}.png" class="costume">`;
+            }
+            ['base', 'bangs', 'beard', 'mustache'].forEach(element => {
+                if (costume.preferences.hair[element]) {
+                    avatarCostume += `<img src="https://s3.amazonaws.com/habitica-assets/mobileApp/images/hair_${element}_${costume.preferences.hair[element]}_${costume.preferences.hair.color}.png" class="costume">`;
+                }
+            });
+            if (costume.armor && !costume.armor.includes('_base_0')) {
+                avatarCostume += `<img src="https://s3.amazonaws.com/habitica-assets/mobileApp/images/broad_${costume.armor}.png" class="costume">`;
+            }
+            ["eyewear", "head", "weapon", "shield", "body", "headAccessory"].forEach(element => {
+                if (costume[element] && !costume[element].includes('base_0')) {
+                    avatarCostume += `<img src="https://s3.amazonaws.com/habitica-assets/mobileApp/images/${costume[element]}`;
+                    if (costume[element] === 'head_special_1' || costume[element] === 'broad_armor_special_1' ||
+                        costume[element] === 'head_special_0' || costume[element] === 'armor_special_0') {
+                        avatarCostume += '.gif" class="costume">';
+                    } else {
+                        avatarCostume += '.png" class="costume">';
+                    }
+                }
+            });
+            if (costume.preferences.hair.flower) {
+                avatarCostume += `<img src="https://s3.amazonaws.com/habitica-assets/mobileApp/images/hair_flower_${costume.preferences.hair.flower}.png" class="costume">`;
+            }
+            avatarCostume += '</div>';
+            return avatarCostume;
+        }
+
+        function updateCurrentCostume() {
+            const currentCostume = {
+                head: user.items.gear.costume.head,
+                armor: user.items.gear.costume.armor,
+                weapon: user.items.gear.costume.weapon,
+                shield: user.items.gear.costume.shield,
+                back: user.items.gear.costume.back,
+                body: user.items.gear.costume.body,
+                eyewear: user.items.gear.costume.eyewear,
+                headAccessory: user.items.gear.costume.headAccessory,
+                preferences: {
+                    hair: {
+                        color: user.preferences.hair.color,
+                        base: user.preferences.hair.base,
+                        bangs: user.preferences.hair.bangs,
+                        beard: user.preferences.hair.beard,
+                        mustache: user.preferences.hair.mustache,
+                        flower: user.preferences.hair.flower
+                    },
+                    skin: user.preferences.skin,
+                    shirt: user.preferences.shirt,
+                    chair: user.preferences.chair,
+                    size: user.preferences.size,
+                    background: user.preferences.background
+                }
+            };
+            $('#unifiedCostumeAvatar').html(costumeAvatar(currentCostume));
+        }
+
+        async function equipCostume(objNew, objOld) {
+            const slots = ['head', 'armor', 'shield', 'weapon', 'back', 'body', 'eyewear', 'headAccessory'];
+            for (const slot of slots) {
+                if (objNew[slot] && !objNew[slot].includes('_base_0')) {
+                    try {
+                        await doAjax(`https://habitica.com/api/v3/user/equip/costume/${objNew[slot]}`, 'POST');
+                    } catch (error) {
+                        console.error('Error equipping item:', error);
+                        throw error;
+                    }
+                }
+            }
+            const result = await doAjax('https://habitica.com/api/v3/user', 'GET');
+            user.items.gear.costume = result.data.items.gear.costume;
+        }
+
+        async function undressCostume() {
+            $('#loading').show();
+            try {
+                const currentCostume = {
+                    head: user.items.gear.costume.head || '',
+                    armor: user.items.gear.costume.armor || '',
+                    weapon: user.items.gear.costume.weapon || '',
+                    shield: user.items.gear.costume.shield || '',
+                    back: user.items.gear.costume.back || '',
+                    body: user.items.gear.costume.body || '',
+                    eyewear: user.items.gear.costume.eyewear || '',
+                    headAccessory: user.items.gear.costume.headAccessory || ''
+                };
+
+                for (const [slot, item] of Object.entries(currentCostume)) {
+                    if (item && !item.includes('_base_0')) {
+                        await doAjax(`https://habitica.com/api/v3/user/equip/costume/${item}`, 'POST');
+                    }
+                }
+
+                try {
+                    const result = await doAjax('https://habitica.com/api/v3/user', 'GET');
+                    if (result && result.data && result.data.items && result.data.items.gear) {
+                        user.items.gear.costume = result.data.items.gear.costume;
+                    } else {
+                        user.items.gear.costume = {
+                            head: '',
+                            armor: '',
+                            weapon: '',
+                            shield: '',
+                            back: '',
+                            body: '',
+                            eyewear: '',
+                            headAccessory: ''
+                        };
+                    }
+                } catch (error) {
+                    console.error('Error fetching user data:', error);
+                    user.items.gear.costume = {
+                        head: '',
+                        armor: '',
+                        weapon: '',
+                        shield: '',
+                        back: '',
+                        body: '',
+                        eyewear: '',
+                        headAccessory: ''
+                    };
+                }
+
+                updateCurrentCostume();
+                // Update all toggle buttons after undressing
+                updateToggleButtons();
+            } catch (error) {
+                console.error('Error undressing costume:', error);
+                alert('Error undressing costume: ' + error);
+            } finally {
+                $('#loading').hide();
+            }
+        }
+
+        // Add logout functionality
+        $('#logoutButton').click(function() {
+            // Clear stored credentials
+            storeData('habitica_user_id', null);
+            storeData('habitica_api_token', null);
+
+            // Clear form fields
+            $('#userId').val('');
+            $('#apiToken').val('');
+
+            // Reset variables
+            userID = '';
+            apiToken = '';
+            content = {};
+            user = {};
+
+            // Show the form again
+            $('#userApiDetailsForm').show();
+
+            // Show login form and hide gear section
+            $('#loginSection').show();
+            $('#gearSection').hide();
+            $('#setsContainer').empty();
+        });
+
+        // Add event listener for undress button
+        $('#undressButton').click(undressCostume);
+
+        // Add event listeners for random preview functionality
+        $('#randomPreviewButton').click(function() {
+            // Get all gear from all sets for global random preview
+            const allGear = [];
+            Object.values(window.gearSets || {}).forEach(setItems => {
+                allGear.push(...setItems);
+            });
+
+            if (allGear.length > 0) {
+                showRandomPreview(allGear);
+            } else {
+                alert('No gear sets available for random preview.');
+            }
+        });
+
+        $('#dressRandomButton').click(dressRandomSelection);
+
+        $('#cancelPreviewButton').click(exitPreviewMode);
+
+        async function dressSet(items) {
+            $('#loading').show();
+            try {
+                // First undress current costume
+                await undressCostume();
+
+                // Then dress new items
+                for (const item of items) {
+                    try {
+                        await doAjax(`https://habitica.com/api/v3/user/equip/costume/${item}`, 'POST');
+                    } catch (error) {
+                        console.error('Error equipping item:', error);
+                        throw error;
+                    }
+                }
+
+                // Update user data
+                try {
+                    const result = await doAjax('https://habitica.com/api/v3/user', 'GET');
+                    if (result && result.data) {
+                        user = result.data;
+                        updateCurrentCostume();
+                        // Update all toggle buttons
+                        updateToggleButtons();
+                    }
+                } catch (error) {
+                    console.error('Error fetching user data:', error);
+                }
+            } catch (error) {
+                console.error('Error dressing set:', error);
+                alert('Error dressing set: ' + error);
+            } finally {
+                $('#loading').hide();
+            }
+        }
+
+        // Add search functionality
+        $('#searchBox').on('input', function() {
+            const searchTerm = $(this).val().toLowerCase();
+            $('.set-container').each(function() {
+                const $container = $(this);
+                const setName = $container.find('.set-title').text().toLowerCase();
+                const itemNames = $container.find('.gear-name').map(function() {
+                    return $(this).text().toLowerCase();
+                }).get();
+
+                // Show if the search term matches the set name or any item name
+                if (setName.includes(searchTerm) || itemNames.some(name => name.includes(searchTerm))) {
+                    $container.removeClass('hidden');
+                } else {
+                    $container.addClass('hidden');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
